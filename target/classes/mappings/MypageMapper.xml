@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.awesome.mapper.MypageDAO">
+
+	<select id="getBookingList" resultType="booking">
+        <![CDATA[ SELECT b.*, r.rsname, r.rsmark
+			FROM booking AS b
+			INNER JOIN shop AS r ON b.rscode = r.rscode
+			WHERE b.id = #{id}
+			ORDER BY b.bkdate ASC ]]>
+	</select>
+
+	<select id="myhotdeal_sort" resultType="hotdealStorage">
+		SELECT i.hdsseq, i.id, i.hdcode, i.hdsusedate, h.hdname,
+		h.hdend,
+		h.hddiscount, h.hdcomment, h.hdimg, s.rsname, s.rsaddr, s.rstell
+		FROM
+		hotdealstorage AS i
+		INNER JOIN hotdeal AS h ON i.hdcode = h.hdcode
+		INNER JOIN shop AS s ON h.rscode = s.rscode
+		<choose>
+			<when test="orderby == 'expired'">
+			<![CDATA[ WHERE i.id = #{id} && i.hdsusedate IS NOT NULL ORDER BY s.rsname ASC ]]>
+			</when>
+			<when test="orderby == 'hddiscount'">
+		 	<![CDATA[ WHERE i.id = #{id} && i.hdsusedate IS NULL ORDER BY h.hddiscount ASC ]]>
+			</when>
+			<when test="orderby == 'rsname'">
+			<![CDATA[ WHERE i.id = #{id} && i.hdsusedate IS NULL ORDER BY s.rsname ASC ]]>
+			</when>
+			<when test="orderby == 'hdend'">
+			<![CDATA[ WHERE i.id = #{id} && i.hdsusedate IS NULL ORDER BY h.hdend ASC ]]>
+			</when>
+			<otherwise>WHERE i.id = #{id}</otherwise>
+		</choose>
+
+	</select>
+
+	<select id="getFavoriteList" resultType="favorite">
+		SELECT f.*, s.rsname,
+		s.rsaddr, s.rstell, r.rsimg
+		FROM favorite AS f
+		INNER JOIN shop AS s ON
+		f.rscode = s.rscode
+		LEFT OUTER JOIN shoppic AS r ON f.rscode = r.rscode
+		WHERE f.id = #{id} AND r.rsimg LIKE '%-1.jpg'
+		ORDER BY f.rscode ASC
+	</select>
+
+	<select id="getHotdealList" resultType="hotdealStorage">
+		<![CDATA[ SELECT
+		i.hdsseq, i.id, i.hdcode, i.hdsusedate, h.hdname, h.hdend, h.hddiscount,
+		h.hdcomment, h.hdimg, s.rsname, s.rsaddr, s.rstell
+		FROM hotdealstorage AS i
+		INNER JOIN hotdeal AS h ON i.hdcode = h.hdcode
+		INNER JOIN shop AS s ON h.rscode = s.rscode
+		WHERE i.id = #{id} && i.hdsusedate IS NULL ]]>
+	</select>
+
+	 <select id="getReviewList" resultType="booking"> SELECT b.*, r.rsname, 
+		r.rsmark, v.* FROM booking AS b INNER JOIN shop AS r ON b.rscode = r.rscode 
+		LEFT OUTER JOIN review AS v ON b.bkcode = v.bkcode WHERE b.bkcomplete= 1 
+		AND b.id=#{id} ORDER BY b.bkdate ASC </select> 
+		
+	<!-- <resultMap type="booking" id="bookingMap">
+		<id column="bk_bkcode" property="bkcode" />
+		<result column="bk_id" property="id" />
+		<result column="bk_rscode" property="rscode" />
+		<result column="bkdate" property="bkdate" />
+		<result column="bknum" property="bknum" />
+		<result column="bkrequest" property="bkrequest" />
+		<result column="bknoshow" property="bknoshow" />
+		<result column="bkapprove" property="bkapprove" />
+		<result column="bkcomplete" property="bkcomplete" />
+		<result column="rsname" property="rsname" />
+		<result column="rsmark" property="rsmark" />
+		<result column="rvcode" property="rvcode" />
+		<association property="int" column="bk_bkcode" javaType="review" resultMap="reviewMap">
+			<id column="bkcode" property="bkcode" />
+			<result column="rvcode" property="rvcode" />
+			<result column="id" property="id" />
+			<result column="rscode" property="rscode" />
+			<result column="rvtitle" property="rvtitle" />
+			<result column="rvcontent" property="rvcontent" />
+			<result column="rvscore" property="rvscore" />
+			<result column="rvcnt" property="rvcnt" />
+			<result column="rvdate" property="rvdate" />
+		</association>
+	</resultMap>
+
+	
+
+	<select id="getReviewList" resultMap="bookingMap">
+		SELECT
+		b.bkcode as bk_bkcode,
+		b.id as bk_id,
+		b.rscode as bk_rscode,
+		b.bkdate,
+		b.bknum,
+		b.bkrequest,
+		b.bknoshow,
+		b.bkapprove,
+		b.bkcomplete,
+		r.rsname,
+		r.rsmark,
+		v.*
+		FROM booking AS b
+		INNER JOIN shop AS r ON b.rscode = r.rscode
+		LEFT OUTER
+		JOIN review AS v ON b.bkcode = v.bkcode
+		WHERE
+		b.bkcomplete= 1 AND
+		b.id=#{id}
+		ORDER BY b.bkdate ASC;
+	</select> -->
+
+
+	<select id="myhotdeal_cancel" parameterType="int">
+		DELETE FROM
+		hotdealstorage WHERE hdsseq = #{hdsseq}
+	</select>
+
+	<select id="myhotdeal_use" resultType="int">
+		UPDATE hotdealstorage SET
+		hdsusedate = now() WHERE hdsseq = #{hdsseq}
+	</select>
+
+	<select id="favorite_cancel" resultType="int">
+		DELETE FROM favorite
+		WHERE rscode = #{rscode}
+	</select>
+
+	<select id="booking_cancel" resultType="int">
+		DELETE FROM booking WHERE
+		bkcode = #{bkcode}
+	</select>
+	<!-- 'test'-> #{id} 로 변경 해야함 'test'뒤 limit 2 하면 2개만 출력 -->
+
+	<insert id="insertReview" parameterType="review"
+		useGeneratedKeys="true" keyProperty="rvcode">
+		INSERT INTO
+		review
+		(RVCODE,ID,RSCODE,BKCODE,RVTITLE,RVCONTENT,RVSCORE,RVCNT,RVDATE)
+		VALUES
+		(default, #{id},#{rscode}, #{bkcode}, #{rvtitle}, #{rvcontent},
+		3, default, now())
+		<selectKey keyProperty="rvcode" resultType="int"
+			order="AFTER">
+			SELECT max(rvcode) from review
+		</selectKey>
+	</insert>
+	<!-- insert reviewpic -->
+
+	<insert id="insertReviewPic" parameterType="java.util.HashMap"
+		useGeneratedKeys="true" keyColumn="rvseq">
+		INSERT INTO
+		reviewpic
+		(rvimg, rvcode)
+		VALUES
+		<foreach collection="reviewpicList" index="key" item="value"
+			separator=",">
+			(#{key}, #{value})
+		</foreach>
+	</insert>
+
+	<select id="getMyinfo" resultType="user">
+		SELECT * FROM users
+		where id =
+		#{id}
+	</select>
+
+	<update id="insertUserPic">
+		UPDATE
+		users SET
+		photo = #{userpicList}
+		WHERE id = #{id}
+	</update>
+
+	<update id="update_user">
+		UPDATE users
+		SET
+		nickname = #{nickname},
+		email = #{email},
+		phonenum = #{phonenum}
+		WHERE id= #{id}
+	</update>
+	
+	<select id="showReview" resultType="review">
+		select r.*,
+	    v.rvimg
+	    from review AS r
+	    inner join reviewpic as v on r.rvcode = v.rvcode
+	    where r.rvcode=#{rvcode};
+	</select>
+
+
+</mapper>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration  PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+    <!-- MyBatis Mapper 파일에서 사용할 Parameter & Return Type에서 사용할  Alias 들 -->
+    <typeAliases>
+        <typeAlias alias="user" type="com.awesome.domain.UsersVO" />
+        <typeAlias alias="shop" type="com.awesome.domain.ShopVO" />
+        <typeAlias alias="shoppic" type="com.awesome.domain.ShopPicVO" />
+        <typeAlias alias="menu" type="com.awesome.domain.MenuVO" />
+        <typeAlias alias="review" type="com.awesome.domain.ReviewVO" />
+        <typeAlias alias="reviewPic" type="com.awesome.domain.ReviewPicVO" />
+        <typeAlias alias="hotdeal" type="com.awesome.domain.HotdealVO" />
+        <typeAlias alias="hotdealStorage" type="com.awesome.domain.HotdealStorageVO" />
+        <typeAlias alias="booking" type="com.awesome.domain.BookingVO" />
+        <typeAlias alias="reply" type="com.awesome.domain.ReplyVO" />
+        <typeAlias alias="favorite" type="com.awesome.domain.FavoriteVO" />
+        <typeAlias alias="likes" type="com.awesome.domain.LikesVO" />
+        <typeAlias alias="criteria" type="com.awesome.domain.Criteria" />
+    </typeAliases>
+</configuration>

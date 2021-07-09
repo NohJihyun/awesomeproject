@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.awesome.mapper.AdminDAO">
+
+	<!--DAO에 메서드명과 SELECT ID= 일치 resultType="com.awesome.domain.HotdealVO 경로 -->
+	<!-- <resultMap type="com.awesome.domain.HotdealVO" id="hotdealResultMap">
+	<id column="hdcode" property="hdcode" />
+		
+		<result column="rscode" property="rscode" />
+		<result column="hdname" property="hdname" />
+		<result column="hdcnt" property="hdcnt" />
+		<result column="hdstart" property="hdstart" />
+		<result column="hdend" property="hdend" />
+		<result column="hddiscount" property="hddiscount" />
+		<result column="hdcomment" property="hdcomment" />
+		<result column="hdimg" property="hdimg" />
+        <result column="rsname" property="rsname" />
+		<result column="offercount" property="offercount" />
+		
+		<collection property="shopVO" resultMap="shopResultMap" />
+		<collection property="hotdealstorageVOList" javaType="java.util.ArrayList" resultMap="HotdealCountResultMap" />
+	</resultMap>
+	
+	
+	<resultMap type="com.awesome.domain.ShopVO" id="shopResultMap">
+		<result column="rscode" property="rscode" />
+		<result column="rsname" property="rsname" />
+	</resultMap>
+
+	<resultMap type="com.awesome.domain.HotdealStorageVO" id="HotdealCountResultMap">
+		<result column="offercount" property="offercount" />
+	</resultMap>
+ -->
+
+<!-- ## 핫딜 관리 ######################################################################## -->
+	<!-- 목록 -->
+	<select id="getHotdealList" parameterType="criteria" resultType="hotdeal">
+		SELECT
+			hd.*,
+			s.rsname AS `rsname`, 
+			COUNT(hds.hdcode) AS `offercount`
+		FROM hotdeal AS `hd`
+		INNER JOIN shop AS `s`
+			ON hd.rscode = s.rscode
+		LEFT OUTER JOIN hotdealstorage AS `hds`
+			ON hd.hdcode = hds.hdcode
+		
+		<where>
+			<if test="search != null and search !=''">
+				s.rsname LIKE CONCAT('%', #{search}, '%')
+			</if>
+		</where>
+		
+		GROUP BY hd.hdcode
+		ORDER BY hdcode DESC
+		LIMIT  #{pageStart}, #{perPageNum}
+		
+	</select>
+	
+	<select id="getCount" resultType="int">
+    	
+    	SELECT COUNT(*)
+		FROM hotdeal AS `hd`
+		INNER JOIN shop AS `s` ON hd.rscode = s.rscode
+		<where>
+			<if test="search != null and search !=''">
+				s.rsname LIKE CONCAT('%', #{search}, '%')
+			</if>
+		</where>
+
+    </select>
+	
+	<!-- 핫딜 상세보기  -->
+	<select id="detail_hotdeal" resultType="hotdeal">
+		SELECT
+			hd.*,
+			s.rsname AS `rsname`, 
+			COUNT(hds.hdcode) AS `offercount`
+		FROM hotdeal AS `hd`
+		INNER JOIN shop AS `s`
+			ON hd.rscode = s.rscode
+		LEFT OUTER JOIN hotdealstorage AS `hds`
+			ON hd.hdcode = hds.hdcode
+		WHERE hd.hdcode = #{hdcode}
+	</select>
+	
+	<!--핫딜update 수정 --> 
+    <!-- jsp연결고리#{hdcomment},-->
+ 	<!-- 핫딜등록쿼리 -->
+	<insert id="hotdealRegist"	parameterType="hotdeal" useGeneratedKeys="true"	keyProperty="hdcode">
+		INSERT INTO hotdeal 
+			(hdname, rscode, hdstart, hdend, hdcnt, hddiscount, hdcomment, hdimg) 
+		VALUES (#{hdname}, #{rscode}, #{hdstart}, #{hdend},	#{hdcnt}, #{hddiscount}, #{hdcomment}, #{hdimg})
+	</insert>
+	
+	<!-- 핫딜수정쿼리 -->
+	<update id="hotdealUpdate" parameterType="hotdeal">
+		UPDATE hotdeal
+		SET
+			hdname = #{hdname}, hdstart = #{hdstart}, hdend = #{hdend}, hdcnt = #{hdcnt},
+			hddiscount = #{hddiscount}, hdcomment = #{hdcomment}
+		WHERE hdcode = #{hdcode}
+	</update>
+	
+<!-- ## 회원 관리 ######################################################################## -->
+	
+	<!-- 회원전체개수 조회 (페이징처리목적)  -->
+    <select id="countUsersList" resultType="int">
+        SELECT COUNT(*) FROM users
+        <if test="search != null and search != ''">
+        WHERE name LIKE CONCAT('%',#{search},'%')
+        </if>
+    </select>
+    	
+	<!-- 회원정보 목록  -->
+    <select id="getUsersList" parameterType="criteria" resultType="user">
+        SELECT * FROM users
+        <if test="search != null and search != ''">
+        WHERE name LIKE CONCAT('%',#{search},'%')
+        </if>
+        LIMIT #{pageStart}, #{perPageNum}
+    </select>
+    
+<!-- ## 식당 관리 ######################################################################## -->
+
+	<!-- 식당목록 게시판 (페이징처리목적) -->
+	<select id="countShopList" resultType="int">
+		SELECT COUNT(*)
+		FROM shop
+		<if test="search != null and search != ''">
+			WHERE rsname LIKE CONCAT('%',#{search},'%')
+		</if>
+	</select>
+	
+	<!-- 식당목록 페이징 게시판 -->
+	<select id="getShopList" parameterType="criteria" resultType="shop">
+		SELECT *
+		FROM shop
+		<if test="search != null and search != ''">
+			WHERE rsname LIKE CONCAT('%',#{search},'%')
+		</if>
+		LIMIT #{pageStart}, #{perPageNum}
+	</select>
+	
+	<!-- 식당 등록 -->
+    <insert id="insertShop" parameterType="shop" useGeneratedKeys="true" keyProperty="rscode">
+    	INSERT INTO
+    		shop
+    	(rsname, rstype, rsrode, rsaddr, rstell, rsprice, rsparking, rsopen, rsclose, rsoffday, rsmark, rscnt, rsupdatedate)	
+    	VALUES
+    	(#{rsname}, #{rstype}, #{rsrode}, #{rsaddr}, #{rstell}, #{rsprice}, #{rsparking}, #{rsopen}, #{rsclose}, #{rsoffday}, #{rsmark}, #{rscnt}, now())	
+		<selectKey keyProperty="rscode" resultType="int" order="AFTER">
+			SELECT max(rscode) AS maxrscode from shop 
+		</selectKey>    	
+		
+    </insert>
+  
+    <!-- 식당메뉴 등록 -->
+    <insert id="insertMenu" parameterType="java.util.HashSet" useGeneratedKeys="true" keyColumn="mncode">
+		INSERT INTO
+			menu
+			(rscode, mnname, mnprice)
+		VALUES
+		<foreach collection="collection" item="item" separator=",">
+		(#{item.rscode},#{item.mnname},#{item.mnprice})
+		</foreach>    
+    </insert>
+    
+    <!-- 식당이미지 등록 -->
+    <insert id="insertShoppic" parameterType="java.util.HashMap" useGeneratedKeys="true" keyColumn="rsseq">
+		INSERT INTO
+			shoppic
+			(rsimg, rscode)
+		VALUES
+		<foreach collection="shoppicList" index="key" item="value" separator=",">
+		(#{key}, #{value})
+		</foreach>    
+    </insert>
+	
+	 <!-- 식당목록 게시판 -->
+	<select id="getShop" resultType="shop">
+		SELECT rscode, rsname
+		FROM shop
+		<if test="rsname != null and rsname != ''">
+			WHERE rsname LIKE CONCAT('%',#{rsname},'%')
+		</if>
+	</select>
+	
+	<!-- 식당등록 -->
+	<update id="updateShop">
+		update shop set rsleave = 1 where rscode = #{rscode}
+	</update>
+	
+	<!-- 식당등록취소 -->
+	<update id="deleteShop">
+		update shop set rsleave = 0 where rscode = #{rscode}
+	</update>
+	
+	<!-- 식당인증마크 승인 -->
+	<update id="markUpdateShop">
+		update shop set rsmark = 1 where rscode = #{rscode}
+	</update>
+	
+	<!-- 식당인증마크 취소 -->
+	<update id="markdeleteShop">
+		update shop set rsmark = 0 where rscode = #{rscode}
+	</update>
+	
+ 
+ <!-- ## 리뷰 관리 ######################################################################## -->
+ 
+  	<!-- 관리자 리뷰 관리 페이지 -->
+	<select id="getReviewList" parameterType="criteria" resultType="review" >
+		SELECT
+			r.*,
+			s.rsname,	   
+			p.rvimg,
+			u.nickname
+		FROM review AS r
+			INNER JOIN shop AS s ON r.rscode = s.rscode
+			INNER JOIN users AS u ON r.id = u.id
+			LEFT OUTER JOIN reviewpic AS p ON r.rvcode = p.rvcode
+			WHERE u.role='PRO'
+			<if test="search != null and search != ''">
+				AND rsname LIKE CONCAT('%',#{search},'%') 
+			</if>
+			LIMIT #{pageStart}, #{perPageNum}
+		
+	</select>
+  
+  <!--  리뷰 카운트 -->
+	<select id="countReviewList" resultType="int" >
+		SELECT 
+			COUNT(*)
+		FROM review AS r
+			INNER JOIN shop AS s ON r.rscode = s.rscode
+			INNER JOIN users AS u ON r.id = u.id
+			LEFT OUTER JOIN reviewpic AS p ON r.rvcode = p.rvcode
+			WHERE u.role='PRO'
+			<if test="search != null and search != ''">
+				AND rsname LIKE CONCAT('%',#{search},'%') 
+			</if>
+	
+	</select>
+	
+	<insert id="insertProReview" parameterType="review" useGeneratedKeys="true" keyProperty="rvcode">
+    	INSERT INTO 
+    	review
+    	(id, rscode, bkcode, rvtitle, rvcontent, rvscore, rvcnt, rvdate)
+    	VALUES
+    	(#{id},#{rscode}, #{bkcode}, #{rvtitle}, #{rvcontent}, ${rvscore}, default, now())
+    	<selectKey keyProperty="rvcode" resultType="int" order="AFTER">
+         SELECT max(rvcode) from review
+      	</selectKey>
+   </insert>
+   
+   <insert id="insertReviewpic" parameterType="java.util.HashMap" useGeneratedKeys="true" keyColumn="rvseq">
+	   INSERT INTO
+	         reviewpic
+	         (rvimg, rvcode)
+	   VALUES
+      <foreach collection="reviewpicList" index="key" item="value" separator=",">
+   		(#{key}, #{value})
+      </foreach>
+   </insert>
+  	
+	
+  
+ <!-- ## 메인화면 관리 ######################################################################## -->
+ 
+	<!-- 메인화면 식당목록 -->
+	<select id="mainGetShopList" resultType="shop">
+	    SELECT *
+	    FROM shop limit 4
+	</select>
+  
+  	<!-- 메인화면 회원목록 -->
+    <select id="mainGetUsersList" resultType="user">
+	    SELECT *
+	    FROM users limit 4
+	</select>
+	
+	<!-- 메인화면 회원목록 -->
+    <select id="mainGetReviewList" resultType="review">
+	    SELECT
+			r.*,
+			s.rsname,	   
+			p.rvimg,
+			u.nickname
+		FROM review AS r 
+			INNER JOIN shop AS s ON r.rscode = s.rscode
+			INNER JOIN users AS u ON r.id = u.id
+			LEFT OUTER JOIN reviewpic AS p ON r.rvcode = p.rvcode
+		WHERE u.role='PRO'
+		GROUP BY r.rvcode limit 4
+	</select>
+	
+</mapper>

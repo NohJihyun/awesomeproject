@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.awesome.mapper.ShopDetailDAO">
+	 <resultMap type="review" id="reviewResultMap">
+		<id column="rvcode" property="rvcode"/>
+		<result column="rvtitle" property="rvtitle"/>
+		<result column="rvdate" property="rvdate"/>
+		<result column="rvcontent" property="rvcontent"/>
+		<result column="id" property="id"/>		
+		<result column="rpcontent" property="rpcontent"/>
+		<result column="rpdate" property="rpdate"/>
+		<result column="photo" property="photo"/>		
+	</resultMap> 
+	
+	<!-- <resultMap type="reply" id="replyResultMap">
+		<result column="id" property="rpid" />		
+	</resultMap> -->
+	
+	<!-- <resultMap type="shop" id="shopResultMap">
+		<id column="rscode" property="rscode"/>
+		<result column="rstype" property="rstype"/>
+		<result column="rsrode" property="rsrode"/>
+		<result column="rsaddr" property="rsaddr"/>
+		<result column="rstell" property="rstell"/>		
+		<result column="rsprice" property="rsprice"/>
+		<result column="rsparking" property="rsparking"/>
+		<result column="rsopen" property="rsopen"/>
+		<result column="rsclose" property="rsclose"/>
+		<result column="rsoffday" property="rsoffday"/>
+		<result column="rscnt" property="rscnt"/>
+		<result column="rsupdatedate" property="rsupdatedate"/>
+		
+		<result column="mnname" property="mnname"/>
+		<result column="mnprice" property="mnprice"/>
+	</resultMap>
+	
+	<resultMap type="menu" id="menuResultMap">
+		<result column="mnname" property="mnname" />
+		<result column="mnprice" property="mnprice" />
+	</resultMap> -->
+	
+	 
+    	 <!-- 리뷰 정보 불러오기 -->
+    	<select id="getList" parameterType="criteria" resultType="review">		    	
+		       		SELECT r.*,  count(p.rpcode), u.photo
+					FROM review AS r					
+                    INNER JOIN users AS u ON r.id = u.id
+					LEFT OUTER JOIN reply AS p ON r.rvcode = p.rvcode 
+					WHERE r.rscode = #{rscode}
+                    GROUP BY r.rvcode
+				<choose>
+				<when test="sort == 'rvcnt'">	
+					ORDER BY rvcnt desc
+				</when>
+				<when test="sort == 'rvdate'">	
+					ORDER BY rvdate desc
+				</when>
+				<when test="sort == 'count'">	
+					ORDER BY count(p.rpcode) desc
+				</when>
+				<otherwise>
+				ORDER BY rvcode desc
+				</otherwise>				
+		        </choose>		        
+    	</select>
+    	
+    	<!-- 식당 정보 불러오기 -->
+    	<select id="get" resultType="shop">
+    		<![CDATA[
+    		SELECT *
+    		FROM shop
+    		WHERE rscode = #{rscode}
+    		]]>
+    	</select>
+    	
+    	<!-- 메뉴 가져오기 -->
+    	<select id="getmenu" resultType="menu">
+    	<![CDATA[
+    		SELECT *
+    		FROM menu
+    		where rscode = #{rscode}
+    		]]>
+    	</select>
+    	
+    	<!-- 전체 평점 계산-->
+    	<select id="getScore" resultType="String">    	
+    		SELECT ROUND(AVG(rvscore), 1) AS `avgrvscore`
+				FROM review
+				WHERE rscode = #{rscode}    	    	  	
+    	</select>
+    	
+    	<!-- 리뷰 수 카운팅 -->
+    	<select id="getReviewCount" resultType="int">
+    	<![CDATA[
+    		SELECT COUNT(rscode) AS `cntreview`
+    		FROM review
+    		where rscode = #{rscode}
+    		]]>
+    	</select>    	
+    
+    	<!-- 즐겨찾기 수 카운팅 -->
+    	<select id="countingFavorite" resultType="int">
+    	<![CDATA[
+    		SELECT COUNT(rscode) AS `cntfavorite`
+    		FROM favorite
+    		where rscode = #{rscode}
+    		]]>
+    	</select>
+    	
+    	<!-- 리뷰 가져오기 -->
+   		 <select id="ReviewDetail" resultType="review">
+    		SELECT r.*, u.photo 
+				FROM review AS r								
+				INNER JOIN users AS u ON r.id = u.id
+				WHERE rvcode = #{rvcode}
+    	</select> 
+    	
+    	<!-- 리뷰 한개만 가져오기 -->
+   		 <select id="ReviewOne" resultType="review">
+    		SELECT r.*, u.photo 
+				FROM review AS r								
+				INNER JOIN users AS u ON r.id = u.id				
+				<choose>
+					<when test="rvcode == 0">	
+						WHERE rscode = #{rscode}
+					</when>
+					<otherwise>					
+					WHERE rvcode = #{rvcode}
+					</otherwise>
+				</choose>
+    	</select>
+    	
+    	<!-- 댓글 가져오기 -->
+    	<select id="ReplyDetail" parameterType="criteria" resultType="reply">
+    		SELECT * 
+    		FROM reply
+    		WHERE rvcode = #{rvcode}
+			LIMIT #{pageStart}, #{perPageNum}
+    	</select>
+    	
+    	<!-- 댓글 등록 -->
+    	<insert id="ReplyInsert" parameterType="reply" useGeneratedKeys="true" keyProperty="rpcode">
+	        INSERT INTO reply (id, rpcontent, rvcode) 	        
+	        VALUES(#{id}, #{rpcontent}, #{rvcode}) 	        
+		</insert>
+		
+		<delete id="DeleteReply">
+    		delete from reply where rpcode = #{rpcode}
+		</delete>
+		
+		<update id="UpdateReply">
+    		update reply set rpcontent = #{rpcontent} where rpcode = #{rpcode}
+   		</update>
+    	
+    	<select id="getFavorite" resultType="int">
+    		Select count(rscode) 
+    		from favorite
+    		where rscode = #{rscode} and id=#{id}
+    	</select>
+    	
+    	<delete id="DeleteFav">
+    		Delete From favorite
+    		where rscode = #{rscode} and id = #{id}
+    	</delete> 
+    	
+    	<insert id="InsertFav"  parameterType="favorite" useGeneratedKeys="false" keyProperty="id">
+    		Insert into favorite(id, rscode) values(#{id}, #{rscode})
+    	</insert>
+    	
+    	<insert id="Booking" parameterType="Booking" useGeneratedKeys="true" keyProperty="bkcode">
+    		Insert into booking values (default, #{id}, #{rscode}, #{bkdate}, #{bknum}, #{bkrequest}, default, default, default)    		
+    	</insert>
+    	
+    	<update id="Uprscnt">
+    		UPDATE shop SET rscnt = rscnt + 1 WHERE rscode = #{rscode}
+    	</update>
+    	
+    	<select  id="countReplyList" resultType="int">
+    		SELECT COUNT(rpcode)
+    		FROM reply
+    		WHERE rvcode = #{rvcode}
+    	</select>
+</mapper>

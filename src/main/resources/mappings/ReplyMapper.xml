@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.awesome.mapper.ReplyDAO">
+
+	<!-- 댓글 등록 -->
+    <insert id="insert" useGeneratedKeys="true">
+        insert into reply (rvcode, id, rpcontent, rpdate) 
+        values(#{rvcode}, #{id}, #{rpcontent}, #{rpdate}) 
+	</insert>
+    
+    <!-- 댓글코드 조회 -->
+    <select id="read" resultType="com.awesome.domain.ReplyVO">
+    	select * from reply where rpcode = #{rpcode}
+    </select>
+    
+    <!-- 댓글 삭제 -->
+    <delete id="delete">
+    	delete from reply where rpcode = #{rpcode}
+    </delete>
+    
+    <!-- 댓글 수정 -->
+    <update id="update">
+    	update reply set rpcontent = #{rpcontent} where rpcode = #{rpcode}
+    </update>
+    
+    <!-- 리뷰코드 조회 @Param("rvcode")와 #{rvcode} 매칭되어 사용되어짐 -->
+    <select id="getListWithPaging" resultType="com.awesome.domain.ReplyVO">
+    	select * from reply where rvcode = #{rvcode}
+    	order by rpcode asc
+    </select>
+    
+</mapper>

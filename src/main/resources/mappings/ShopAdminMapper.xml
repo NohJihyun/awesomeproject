@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.awesome.mapper.ShopAdminDAO">
+	
+	<!-- 예약 목록 resultMap -->
+	<!-- <resultMap type="com.awesome.domain.BookingVO" id="bookingResultMap">
+		<id property="bkcode" column="bkcode" />
+		<result property="bkdate" column="bkdate" />
+		<result property="bknum" column="bknum" />
+		<result property="bkrequest" column="bkrequest" />
+		<result property="rscode" column="rscode" />
+		<result property="name" column="username" />
+	</resultMap>	
+	 -->
+	<!-- 핫딜 목록 resultMap -->
+	<!-- <resultMap type="com.awesome.domain.HotdealVO" id="hotdealResultMap">
+		<id property="hdcode" column="hdcode"/>
+		<result property="rscode" column="rscode"/>
+		<result property="rscode" column="rscode"/>
+		<result property="hdname" column="hdname"/>
+		<result property="hdcnt" column="hdcnt"/>
+		<result property="hdstart" column="hdstart"/>
+		<result property="hdend" column="hdend"/>
+		<result property="hddiscount" column="hddiscount"/>
+		<result property="hdcomment" column="hdcomment"/>
+		<result property="rsname" column="shopname"/>
+		<result property="offercount" column="offercount" />
+	</resultMap> -->
+	
+	<!-- 리뷰 목록 resultMap -->
+	<!-- <resultMap type="com.awesome.domain.ReviewVO" id="reviewResultMap">
+		<id property="rvcode" column="rvcode"/>
+		<result property="id" column="id"/>
+		<result property="rscode" column="rscode"/>
+		<result property="rvtitle" column="rvtitle"/>
+		<result property="rvcontent" column="rvcontent"/>
+		<result property="rvscore" column="rvscore"/>
+		<result property="rvcnt" column="rvcnt"/>
+		<result property="rvdate" column="rvdate"/>
+		<result property="replycount" column="replycount"/>
+	</resultMap> -->
+	
+	<!-- ##########  핫딜 QUERY ###################################################### -->
+	<!-- 핫딜 총개시글 갯수 출력 -->
+	<select id="countHotdealList" resultType="int">
+	
+		SELECT COUNT(*) FROM hotdeal where rscode = #{rscode}
+		<if test="search != null and search != ''">
+			  AND hdname LIKE CONCAT('%', #{search}, '%')
+		</if>
+ 
+	</select>
+	
+	<!-- 핫딜목록 페이지 + 페이징 + 검색 -->
+    <select id="getHotdealPagingList" parameterType="criteria" resultType="hotdeal">
+        
+        SELECT 
+        	  HD.*, 
+        	  COUNT(HDS.hdcode) AS `offercount`
+		FROM
+			  hotdeal AS `HD`
+			  LEFT OUTER JOIN hotdealstorage AS `HDS` ON HD.hdcode = HDS.hdcode
+		WHERE HD.rscode= #{rscode}
+		<if test="search != null and search != ''">
+			  AND HD.hdname LIKE CONCAT('%', #{search}, '%')
+		</if>
+		GROUP BY HD.hdcode
+		LIMIT #{pageStart}, #{perPageNum}
+		
+    </select>
+	
+	
+	<!-- 메인 핫딜 목록 조회 -->
+    <select id="getHotdealList"  resultType="hotdeal">
+        
+        SELECT 
+        	  HD.*, 
+        	  COUNT(HDS.hdcode) AS `offercount`
+		FROM
+			  hotdeal AS `HD`
+			  LEFT OUTER JOIN hotdealstorage AS `HDS` ON HD.hdcode = HDS.hdcode
+		WHERE HD.rscode= #{rscode}
+		GROUP BY HD.hdcode
+		ORDER BY HD.hdcode DESC
+		<if test="limit_count != null and limit_count != 0">
+		LIMIT #{limit_count}
+		</if>
+		
+    </select>
+    
+    <!-- ##########   예약 QUERY ###################################################### -->
+    
+    <!-- 예약 총개시글 갯수 출력 -->
+	<select id="countBookingList" resultType="int">
+	
+		SELECT COUNT(*) 
+		FROM 
+		booking AS `BK` INNER JOIN users AS `U` ON BK.id = U.id 
+		WHERE BK.rscode = #{rscode}
+		<if test="search != null and search != ''">
+			  AND U.name LIKE CONCAT('%', #{search}, '%')
+		</if>
+ 
+	</select>
+    
+    <!-- 예약 목록 페이지 + 페이징 + 검색   -->
+    <select id="getBookPagingList" resultType="booking">
+        
+        SELECT 
+	        BK.*,
+	        U.name,	U.phonenum
+        FROM
+        	booking AS `BK` 
+        	INNER JOIN users AS `U` ON BK.id = U.id
+        WHERE BK.rscode = #{rscode}
+        <if test="search != null and search != ''"> 
+      		AND U.name LIKE CONCAT('%', #{search}, '%')
+      	</if>
+      	ORDER BY BK.bkdate DESC
+        LIMIT #{pageStart}, #{perPageNum}
+        
+    </select>
+    
+    <!-- 메인 예약 목록 -->
+    <select id="getBookList" resultType="booking">
+        
+        SELECT 
+	        BK.*,
+	        U.name,	U.phonenum
+        FROM
+        	booking AS `BK` 
+        	INNER JOIN users AS `U` ON BK.id = U.id
+        WHERE BK.rscode = #{rscode}
+      	ORDER BY BK.bkdate DESC
+        <if test="limit_count != null and limit_count != 0">
+        LIMIT #{limit_count}
+        </if>
+        
+    </select>
+    
+    <!-- 예약 승인 처리 -->
+    <update id="approveBooking">
+    	UPDATE booking 
+    	SET bkapprove = 1
+    	WHERE bkcode = #{bkcode}
+    </update>
+	
+	<!-- 예약 승인 처리 -->
+    <update id="noShowBooking">
+    	UPDATE booking 
+    	SET bknoshow = 1
+    	WHERE bkcode = #{bkcode}
+    </update>
+	
+	<!-- 예약 방문 처리 -->
+    <update id="completeBooking">
+    	UPDATE booking 
+    	SET bkcomplete = 1
+    	WHERE bkcode = #{bkcode}
+    </update>
+	
+	
+	<!-- ##########  리뷰 QUERY ###################################################### -->
+	
+	 <!-- 리뷰 총개시글 갯수 출력 -->
+	<select id="countReviewList" resultType="int">
+		SELECT COUNT(*)	FROM review WHERE rscode = #{rscode}
+	</select>
+    
+    <!-- 리뷰 목록 페이지 + 페이징 -->
+    <select id="getReviewPagingList" resultType="review">
+        
+        SELECT 
+			RV.*, 
+			PIC.rvimg,
+			COUNT(RP.RVCODE) AS `replycount`
+		FROM 
+			review AS `RV` 
+			LEFT OUTER JOIN reply AS `RP` ON RV.RVCODE = RP.RVCODE
+			LEFT OUTER JOIN reviewpic AS `PIC` ON RV.rvcode = PIC.rvcode
+		WHERE RV.RSCODE = #{rscode}
+		GROUP BY RV.RVCODE
+		<choose> 
+			<when test="sort == 'rvscore'">
+				ORDER BY RV.RVSCORE DESC
+			</when>
+			<when test="sort == 'replycount'">
+				ORDER BY REPLYCOUNT DESC
+			</when>
+			<otherwise>
+				ORDER BY RV.RVDATE DESC
+			</otherwise>
+        </choose>
+        LIMIT #{pageStart}, #{perPageNum}
+        
+    </select>
+	
+	<!-- 리뷰 목록 -->
+	<select id="getReviewList" resultType="review">
+        
+		SELECT 
+			RV.*, 
+			PIC.rvimg,
+			COUNT(RP.RVCODE) AS `replycount`
+		FROM 
+			review AS `RV` 
+			LEFT OUTER JOIN reply AS `RP` ON RV.RVCODE = RP.RVCODE
+			LEFT OUTER JOIN reviewpic AS `PIC` ON RV.rvcode = PIC.rvcode
+		WHERE RV.RSCODE = #{rscode}
+		GROUP BY RV.RVCODE
+		<choose> 
+			<when test="sort == 'rvscore'">
+				ORDER BY RV.RVSCORE DESC
+			</when>
+			<when test="sort == 'replycount'">
+				ORDER BY REPLYCOUNT DESC
+			</when>
+			<otherwise>
+				ORDER BY RV.RVDATE DESC
+			</otherwise>
+        </choose>
+    </select>
+    
+    <!-- ########## 식당 QUERY ###################################################### -->
+    
+    <!-- 식당정보 가져오기 -->
+    <select id="getShop" resultType="shop">
+
+    	SELECT * 
+    	FROM shop
+    	WHERE rscode = #{rscode}
+    	
+    </select>
+
+    <!-- 식당메뉴 가져오기 -->
+    <select id="getMenu" resultType="menu">
+
+    	SELECT * 
+    	FROM menu
+    	WHERE rscode = #{rscode}
+    	
+    </select>
+
+	<!-- 식당사진 가져오기 -->
+    <select id="getShoppic" resultType="shoppic">
+
+    	SELECT * 
+    	FROM shoppic
+    	WHERE rscode = #{rscode}
+    	
+    </select>
+
+	<!--  식당 정보 수정 -->
+	<update id="updateShop" parameterType="shop">
+    	UPDATE
+    		shop
+    	SET
+    		rsname = #{rsname}, rstype = #{rstype}, rsrode = #{rsrode}, rsaddr = #{rsaddr}, rstell = #{rstell}, rsprice = #{rsprice}, 
+    		rsparking = #{rsparking}, rsopen = #{rsopen}, rsclose = #{rsclose}, rsoffday = #{rsoffday}, rsupdatedate = now()
+    	WHERE
+    		rscode = #{rscode}
+		
+    </update>
+    
+    <!--  식당 메뉴 삭제 -->
+    <delete id="deleteMenu">
+    
+    	DELETE FROM menu where rscode = #{rscode}
+    
+    </delete>
+    
+    <!--  식당 메뉴 등록 -->
+    <insert id="insertMenu" parameterType="java.util.HashSet" useGeneratedKeys="true" keyColumn="mncode">
+
+    	INSERT INTO
+			menu
+			(rscode, mnname, mnprice)
+		VALUES
+		<foreach collection="collection" item="item" separator=",">
+		(#{item.rscode},#{item.mnname},#{item.mnprice})
+		</foreach>
+  
+    </insert>
+    
+    <!-- 식당이미지 등록 -->
+    <insert id="insertShoppic" parameterType="java.util.HashMap" useGeneratedKeys="true" keyColumn="rsseq">
+
+		INSERT INTO
+			shoppic
+			(rsimg, rscode)
+		VALUES
+		<foreach collection="shoppicList" index="key" item="value" separator=",">
+		(#{key}, #{value})
+		</foreach>    
+
+    </insert>
+
+
+
+    
+</mapper>

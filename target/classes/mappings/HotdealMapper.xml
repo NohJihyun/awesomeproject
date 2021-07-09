@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.awesome.mapper.HotdealDAO">
+
+
+	<insert id="hotdeal_get" parameterType="hotdealstorage"
+		useGeneratedKeys="true" keyProperty="hdsseq">
+
+		INSERT INTO hotdealstorage (id,
+		hdcode, hdsregdate)
+		VALUES (#{id}, #{hdcode}, now())
+
+	</insert>
+
+	<select id="countHotdealList" resultType="int">
+
+		SELECT COUNT(hdcode) FROM hotdeal
+
+	</select>
+
+	<select id="getHotdealPagingList" parameterType="criteria"
+		resultType="hotdeal">
+
+		SELECT h.*, count(hds.hdsseq) as hdcount
+		FROM hotdeal AS h
+		LEFT JOIN hotdealstorage hds ON h.hdcode = hds.hdcode
+		GROUP BY h.hdcode
+		<choose>
+			<when test="sort == 'hdstart'">
+				ORDER BY hdstart
+			</when>
+			<when test="sort == 'hdend'">
+				ORDER BY hdend
+			</when>
+			<when test="sort == 'hddiscount'">
+				ORDER BY hddiscount DESC
+			</when>
+			<when test="sort == 'hdcnt'">
+				ORDER BY hdcnt
+			</when>
+			<otherwise>ORDER BY hdstart</otherwise>
+		</choose>
+
+		LIMIT #{pageStart}, #{perPageNum}
+
+	</select>
+	
+	<select id="checkhds" resultType="int">
+	    select count(hdsseq)
+        from hotdealstorage
+        where id=#{id} and hdcode=#{hdcode};
+
+	</select>
+
+</mapper>
